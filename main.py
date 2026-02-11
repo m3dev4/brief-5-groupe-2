@@ -1,5 +1,6 @@
 from modules.categories.add.addCategorie import add_categorie
 from modules.categories.list.listCategorie import list_categories
+from modules.categories.delete.deleteCategorie import delete_categorie
 
 def main_menu():
     print("Bienvenue dans le menu principal (: ")
