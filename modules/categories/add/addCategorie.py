@@ -19,6 +19,10 @@ def add_categorie():
     try:
         cursor.execute(query, (nom_categorie,))
         db.commit()
-        print("Catégorie ajoutée avec succès!")
+        print("✅ Catégorie ajoutée avec succès!")
     except Exception as e:
-        print(f"Erreur lors de l'ajout de la catégorie: {e}")
+        db.rollback()
+        print(f"❌ Erreur lors de l'ajout de la catégorie: {e}")
+    finally:
+        cursor.close()
+        db.close()

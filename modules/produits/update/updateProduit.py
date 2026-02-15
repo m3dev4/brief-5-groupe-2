@@ -3,10 +3,13 @@ from utils.connectDb import connect_db
 
 def update_produit():
     db = connect_db()
+    if not db:
+        return
+    
     cursor = db.cursor()
     query = "SELECT * FROM produits"
     category_query = "SELECT * FROM categories WHERE id = %s"
-    query_update = "UPDATE produits SET nom_produit = %s, prix = %s, quantite = %s, stock = %s, id_categorie = %s WHERE id = %s"
+    query_update = "UPDATE produits SET nom_produit = %s, prix = %s, stock = %s, quantite = %s, id_categorie = %s WHERE id = %s"
     cursor.execute(query)
     produits = cursor.fetchall()
     if not produits:
@@ -18,7 +21,7 @@ def update_produit():
         cursor.execute(category_query, (produit[5],))
         category = cursor.fetchone()
         print(
-            f"{i}. {produit[1]} - Prix: {produit[2]}, Quantité: {produit[3]}, Stock: {produit[4]}, Catégorie {category[1] if category else 'Inconnue'}"
+            f"{i}. {produit[1]} - Prix: {produit[2]}, Stock: {produit[3]}, Quantité: {produit[4]}, Catégorie: {category[1] if category else 'Inconnue'}"
         )
 
     while True:
@@ -66,27 +69,11 @@ def update_produit():
 
     while True:
         try:
-            quantite_input = input(
-                "Entrez la nouvelle quantité du produit (laissez vide pour ne pas changer): "
-            )
-            if quantite_input == "":
-                quantite = selected_product[3]
-                break
-            quantite = int(quantite_input)
-            if quantite < 0:
-                print("La quantité ne peut pas être négative. Veuillez réessayer.")
-                continue
-            else:
-                break
-        except ValueError:
-            print("Entrée invalide. Veuillez entrer un nombre entier pour la quantité.")
-    while True:
-        try:
             stock_input = input(
                 "Entrez le nouveau stock du produit (laissez vide pour ne pas changer): "
             )
             if stock_input == "":
-                stock = selected_product[4]
+                stock = selected_product[3]  # produit[3] = stock
                 break
             stock = int(stock_input)
             if stock < 0:
@@ -96,6 +83,22 @@ def update_produit():
                 break
         except ValueError:
             print("Entrée invalide. Veuillez entrer un nombre entier pour le stock.")
+    while True:
+        try:
+            quantite_input = input(
+                "Entrez la nouvelle quantité du produit (laissez vide pour ne pas changer): "
+            )
+            if quantite_input == "":
+                quantite = selected_product[4]  # produit[4] = quantite
+                break
+            quantite = int(quantite_input)
+            if quantite < 0:
+                print("La quantité ne peut pas être négative. Veuillez réessayer.")
+                continue
+            else:
+                break
+        except ValueError:
+            print("Entrée invalide. Veuillez entrer un nombre entier pour la quantité.")
 
     while True:
         cursor.execute("SELECT * FROM categories")
@@ -120,9 +123,16 @@ def update_produit():
             print(
                 "Entrée invalide. Veuillez entrer un nombre entier pour la catégorie."
             )
-    cursor.execute(
-        query_update,
-        (nom_produit, price, quantite, stock, category_id, selected_product[0]),
-    )
-    db.commit()
-    print("Produit mis à jour avec succès.")
+    try:
+        cursor.execute(
+            query_update,
+            (nom_produit, price, stock, quantite, category_id, selected_product[0]),
+        )
+        db.commit()
+        print("✅ Produit mis à jour avec succès.")
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Erreur lors de la mise à jour du produit: {e}")
+    finally:
+        cursor.close()
+        db.close()
